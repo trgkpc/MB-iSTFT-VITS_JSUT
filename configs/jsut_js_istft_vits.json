@@ -12,6 +12,7 @@
       "lr_decay": 0.999875,
       "segment_size": 8192,
       "init_lr_ratio": 1,
+      "multi_gpu": false,
       "warmup_epochs": 0,
       "c_mel": 45,
       "c_kl": 1.0,

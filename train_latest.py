@@ -45,17 +45,16 @@ def main():
   """Assume Single Node Multi GPUs Training Only"""
   assert torch.cuda.is_available(), "CPU training is not allowed."
 
-  n_gpus = torch.cuda.device_count()
   os.environ['MASTER_ADDR'] = 'localhost'
   os.environ['MASTER_PORT'] = '65520'
-#   n_gpus = 1
 
   parser = argparse.ArgumentParser()
   parser.add_argument('-c', '--config', type=str, default="./configs/base.json",
                       help='JSON file for configuration')
   args = parser.parse_args()
-
   hps = utils.get_hparams_and_save(args.config)
+  n_gpus = torch.cuda.device_count() if hps.train.multi_gpu else 1
+
   mp.spawn(run, nprocs=n_gpus, args=(n_gpus, hps,))
 
 
