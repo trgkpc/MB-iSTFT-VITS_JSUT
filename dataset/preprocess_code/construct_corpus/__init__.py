@@ -1,1 +1,1 @@
-from .main import construct_corpus
+from .construct import construct_corpus

@@ -24,4 +24,4 @@ if __name__ == '__main__':
                 }
                 utterance_list.append(utt)
     
-    construct_corpus(utterance_list)
+    construct_corpus(os.path.abspath(__file__), utterance_list)

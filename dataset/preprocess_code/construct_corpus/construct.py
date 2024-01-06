@@ -26,8 +26,10 @@ def write_filelist(path, lis):
         for l in lis:
             print("\t".join(l), file=f)
 
-def construct_corpus(utterance_list, filelist_dir='filelist', val_size=100, fs=22050, verbose=False):
+def construct_corpus(main_file_path, utterance_list, filelist_dir='filelist', val_size=100, fs=22050, verbose=False):
     files = list()
+    corpus_dir = os.path.join("dataset", main_file_path.split("/")[-2])
+    print("corpus_dir:", corpus_dir)
     for utt in tqdm(utterance_list):
         spk = utt["spk"]
         txt = utt["txt"]
@@ -45,7 +47,8 @@ def construct_corpus(utterance_list, filelist_dir='filelist', val_size=100, fs=2
             make_filedir(ofname)
             resample(ifname, ofname, fs)
 
-            files.append([ofname, " ".join(phonemes), "".join(accent), spk])
+            wav_fname = os.path.join(corpus_dir, ofname)
+            files.append([wav_fname, " ".join(phonemes), "".join(accent), spk])
         else:
             if verbose:
                 print("[[WARNING]] file not exists:", ifname)
