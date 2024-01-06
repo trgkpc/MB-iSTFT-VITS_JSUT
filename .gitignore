@@ -1,0 +1,14 @@
+# Cache files
+__pycache__
+build
+.vscode
+.DS_Store
+.idea
+*swp
+
+# wav
+dataset/*/wav
+output
+
+# Security
+.env

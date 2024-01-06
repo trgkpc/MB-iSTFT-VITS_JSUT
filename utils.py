@@ -135,39 +135,25 @@ def load_wav_to_torch(full_path):
   return torch.FloatTensor(data.astype(np.float32)), sampling_rate
 
 
-def load_filepaths_and_text(filename, split="|"):
+def load_filepaths_and_text(filename, split="\t"):
   with open(filename, encoding='utf-8') as f:
     filepaths_and_text = [line.strip().split(split) for line in f]
+  filepaths_and_text = [[x[0], x[1].split(), x[2], x[3]] for x in filepaths_and_text]
   return filepaths_and_text
 
 
-def get_hparams(init=True):
-  parser = argparse.ArgumentParser()
-  parser.add_argument('-c', '--config', type=str, default="./configs/base.json",
-                      help='JSON file for configuration')
-  parser.add_argument('-m', '--model', type=str, required=True,
-                      help='Model name')
-  
-  args = parser.parse_args()
-  model_dir = os.path.join("./logs", args.model)
-
-  if not os.path.exists(model_dir):
-    os.makedirs(model_dir)
-
-  config_path = args.config
-  config_save_path = os.path.join(model_dir, "config.json")
-  if init:
-    with open(config_path, "r") as f:
-      data = f.read()
-    with open(config_save_path, "w") as f:
-      f.write(data)
-  else:
-    with open(config_save_path, "r") as f:
-      data = f.read()
+def get_hparams_and_save(config_path):
+  with open(config_path, "r") as f:
+    data = f.read()
   config = json.loads(data)
+  config["model"]["n_speakers"] = len(config["data"]["speakers"])
+
+  os.makedirs(config["model_dir"], exist_ok=True)
+  config_save_path = os.path.join(config["model_dir"], "config.json")
+  with open(config_save_path, "w") as f:
+    f.write(data)
   
   hparams = HParams(**config)
-  hparams.model_dir = model_dir
   return hparams
 
 

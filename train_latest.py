@@ -34,6 +34,7 @@ from losses import (
 )
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
+from text import accent_symbols
 
 torch.autograd.set_detect_anomaly(True)
 torch.backends.cudnn.benchmark = True
@@ -44,12 +45,17 @@ def main():
   """Assume Single Node Multi GPUs Training Only"""
   assert torch.cuda.is_available(), "CPU training is not allowed."
 
-  n_gpus = torch.cuda.device_count()
+  n_gpus = 1 # torch.cuda.device_count()
   os.environ['MASTER_ADDR'] = 'localhost'
   os.environ['MASTER_PORT'] = '65520'
 #   n_gpus = 1
 
-  hps = utils.get_hparams()
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-c', '--config', type=str, default="./configs/base.json",
+                      help='JSON file for configuration')
+  args = parser.parse_args()
+
+  hps = utils.get_hparams_and_save(args.config)
   mp.spawn(run, nprocs=n_gpus, args=(n_gpus, hps,))
 
 
@@ -85,6 +91,7 @@ def run(rank, n_gpus, hps):
 
   net_g = SynthesizerTrn(
       len(symbols),
+      len(accent_symbols),
       hps.data.filter_length // 2 + 1,
       hps.train.segment_size // hps.data.hop_length,
       **hps.model).cuda(rank)
@@ -138,14 +145,16 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
 
   net_g.train()
   net_d.train()
-  for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(train_loader):
-    x, x_lengths = x.cuda(rank, non_blocking=True), x_lengths.cuda(rank, non_blocking=True)
+  for batch_idx, (x, x_lengths, sid, spec, spec_lengths, y, y_lengths) in enumerate(train_loader):
+    x = (x[0].cuda(rank, non_blocking=True), x[1].cuda(rank, non_blocking=True))
+    x_lengths = x_lengths.cuda(rank, non_blocking=True)
+    sid = sid.cuda(rank, non_blocking=True)
     spec, spec_lengths = spec.cuda(rank, non_blocking=True), spec_lengths.cuda(rank, non_blocking=True)
     y, y_lengths = y.cuda(rank, non_blocking=True), y_lengths.cuda(rank, non_blocking=True)
 
     with autocast(enabled=hps.train.fp16_run):
       y_hat, y_hat_mb, l_length, attn, ids_slice, x_mask, z_mask,\
-      (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths)
+      (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, x_lengths, spec, spec_lengths, sid=sid)
 
       mel = spec_to_mel_torch(
           spec, 
@@ -252,13 +261,14 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
 def evaluate(hps, generator, eval_loader, writer_eval):
     generator.eval()
     with torch.no_grad():
-      for batch_idx, (x, x_lengths, spec, spec_lengths, y, y_lengths) in enumerate(eval_loader):
-        x, x_lengths = x.cuda(0), x_lengths.cuda(0)
+      for batch_idx, (x, x_lengths, sid, spec, spec_lengths, y, y_lengths) in enumerate(eval_loader):
+        x = (x[0].cuda(0), x[1].cuda(0))
+        x_lengths = x_lengths.cuda(0)
         spec, spec_lengths = spec.cuda(0), spec_lengths.cuda(0)
         y, y_lengths = y.cuda(0), y_lengths.cuda(0)
 
         # remove else
-        x = x[:1]
+        x = (x[0][:1], x[1][:1])
         x_lengths = x_lengths[:1]
         spec = spec[:1]
         spec_lengths = spec_lengths[:1]

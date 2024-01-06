@@ -138,6 +138,7 @@ class DurationPredictor(nn.Module):
 class TextEncoder(nn.Module):
   def __init__(self,
       n_vocab,
+      n_accent_vocab,
       out_channels,
       hidden_channels,
       filter_channels,
@@ -147,6 +148,7 @@ class TextEncoder(nn.Module):
       p_dropout):
     super().__init__()
     self.n_vocab = n_vocab
+    self.n_accent_vocab = n_accent_vocab
     self.out_channels = out_channels
     self.hidden_channels = hidden_channels
     self.filter_channels = filter_channels
@@ -155,8 +157,10 @@ class TextEncoder(nn.Module):
     self.kernel_size = kernel_size
     self.p_dropout = p_dropout
 
-    self.emb = nn.Embedding(n_vocab, hidden_channels)
-    nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)
+    self.text_emb = nn.Embedding(n_vocab, hidden_channels)
+    self.accent_emb = nn.Embedding(n_accent_vocab, hidden_channels)
+    nn.init.normal_(self.text_emb.weight, 0.0, hidden_channels**-0.5)
+    nn.init.normal_(self.accent_emb.weight, 0.0, hidden_channels**-0.5)
 
     self.encoder = attentions.Encoder(
       hidden_channels,
@@ -168,7 +172,7 @@ class TextEncoder(nn.Module):
     self.proj= nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
   def forward(self, x, x_lengths):
-    x = self.emb(x) * math.sqrt(self.hidden_channels) # [b, t, h]
+    x = (self.text_emb(x[0]) + self.accent_emb(x[1]))* math.sqrt(self.hidden_channels) # [b, t, h]
     x = torch.transpose(x, 1, -1) # [b, h, t]
     x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
 
@@ -570,6 +574,7 @@ class SynthesizerTrn(nn.Module):
 
   def __init__(self, 
     n_vocab,
+    n_accent_vocab,
     spec_channels,
     segment_size,
     inter_channels,
@@ -598,6 +603,7 @@ class SynthesizerTrn(nn.Module):
 
     super().__init__()
     self.n_vocab = n_vocab
+    self.n_accent_vocab = n_accent_vocab
     self.spec_channels = spec_channels
     self.inter_channels = inter_channels
     self.hidden_channels = hidden_channels
@@ -621,7 +627,9 @@ class SynthesizerTrn(nn.Module):
 
     self.use_sdp = use_sdp
 
-    self.enc_p = TextEncoder(n_vocab,
+    self.enc_p = TextEncoder(
+        n_vocab,
+        n_accent_vocab,
         inter_channels,
         hidden_channels,
         filter_channels,
@@ -655,7 +663,7 @@ class SynthesizerTrn(nn.Module):
   def forward(self, x, x_lengths, y, y_lengths, sid=None):
 
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
-    if self.n_speakers > 0:
+    if self.n_speakers > 1:
       g = self.emb_g(sid).unsqueeze(-1) # [b, h, 1]
     else:
       g = None
@@ -694,7 +702,7 @@ class SynthesizerTrn(nn.Module):
 
   def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
-    if self.n_speakers > 0:
+    if self.n_speakers > 1:
       g = self.emb_g(sid).unsqueeze(-1) # [b, h, 1]
     else:
       g = None
@@ -719,7 +727,7 @@ class SynthesizerTrn(nn.Module):
     return o, o_mb, attn, y_mask, (z, z_p, m_p, logs_p)
 
   def voice_conversion(self, y, y_lengths, sid_src, sid_tgt):
-    assert self.n_speakers > 0, "n_speakers have to be larger than 0."
+    assert self.n_speakers > 1, "n_speakers have to be larger than 0."
     g_src = self.emb_g(sid_src).unsqueeze(-1)
     g_tgt = self.emb_g(sid_tgt).unsqueeze(-1)
     z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g_src)

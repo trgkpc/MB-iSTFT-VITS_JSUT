@@ -1,0 +1,3 @@
+[submodule "dataset/JSUT/jsut-lab"]
+	path = dataset/JSUT/jsut-lab
+	url = git@github.com:r9y9/jsut-lab.git
