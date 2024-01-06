@@ -17,8 +17,8 @@ pip install -r requirements.txt
 - 以下を実行してください．
 - 2行目は公式実装にはなかったのですが，自分の手元ではこれをやらないと動きませんでした
 ```
-cd monotonic_align && python setup.py build_ext --inplace
-cd monotonic_align && cp build/lib*/monotonic_align/ ./ -r # 公式実装には無いので不要かもしれない
+cd monotonic_align && python setup.py build_ext --inplace && cd -
+cp monotonic_align/build/lib*/monotonic_align/ monotonic_align/ -r # 公式実装には無いので不要かもしれない
 ```
 ## 1. データセット取得
 - [ここ](https://sites.google.com/site/shinnosuketakamichi/publication/jsut)からJSUTコーパスをダウンロードし，`dataset/JSUT`以下に解凍
