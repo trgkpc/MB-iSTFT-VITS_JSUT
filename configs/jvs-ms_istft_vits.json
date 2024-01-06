@@ -55,6 +55,7 @@
       "subbands": 4,
       "gen_istft_n_fft": 16,
       "gen_istft_hop_size": 4,
+      "gin_channels": 256,
       "inter_channels": 192,
       "hidden_channels": 192,
       "filter_channels": 768,
