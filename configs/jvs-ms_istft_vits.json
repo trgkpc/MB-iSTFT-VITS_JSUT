@@ -20,7 +20,8 @@
       "fine_tuning": false,
       "hop_sizes": [30, 60, 10],
       "win_lengths": [150, 300, 60],
-      "window": "hann_window"  
+      "window": "hann_window",
+      "port_id": "65521"
     },
     "data": {
       "training_files":"dataset/JVS/filelist/train.txt",

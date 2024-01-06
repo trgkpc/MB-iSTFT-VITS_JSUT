@@ -36,17 +36,17 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
 from text import accent_symbols
 
+# from SlackClient import ProgressNotifier
+
 torch.autograd.set_detect_anomaly(True)
 torch.backends.cudnn.benchmark = True
 global_step = 0
 
+# prog_notify = ProgressNotifier(total_step=300*1000, send_interval=60*30)
 
 def main():
   """Assume Single Node Multi GPUs Training Only"""
   assert torch.cuda.is_available(), "CPU training is not allowed."
-
-  os.environ['MASTER_ADDR'] = 'localhost'
-  os.environ['MASTER_PORT'] = '65520'
 
   parser = argparse.ArgumentParser()
   parser.add_argument('-c', '--config', type=str, default="./configs/base.json",
@@ -54,6 +54,9 @@ def main():
   args = parser.parse_args()
   hps = utils.get_hparams_and_save(args.config)
   n_gpus = torch.cuda.device_count() if hps.train.multi_gpu else 1
+
+  os.environ['MASTER_ADDR'] = 'localhost'
+  os.environ['MASTER_PORT'] = hps.train.port_id
 
   mp.spawn(run, nprocs=n_gpus, args=(n_gpus, hps,))
 
@@ -129,8 +132,6 @@ def run(rank, n_gpus, hps):
     scheduler_g.step()
     scheduler_d.step()
 
-
-
 def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers):
   net_g, net_d = nets
   optim_g, optim_d = optims
@@ -140,7 +141,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
     writer, writer_eval = writers
 
   train_loader.batch_sampler.set_epoch(epoch)
-  global global_step
+  global global_step # , prog_notify
 
   net_g.train()
   net_d.train()
@@ -249,6 +250,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
         utils.save_checkpoint(net_g, optim_g, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "G_{}.pth".format(global_step)))
         utils.save_checkpoint(net_d, optim_d, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "D_{}.pth".format(global_step)))
     global_step += 1
+    # prog_notify(global_step)
 
   
   if rank == 0:
