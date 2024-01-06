@@ -36,6 +36,8 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
 from text import accent_symbols
 
+from SlackClient import ProgressNotifier
+
 torch.autograd.set_detect_anomaly(True)
 torch.backends.cudnn.benchmark = True
 global_step = 0
@@ -45,7 +47,7 @@ def main():
   """Assume Single Node Multi GPUs Training Only"""
   assert torch.cuda.is_available(), "CPU training is not allowed."
 
-  n_gpus = 1 # torch.cuda.device_count()
+  n_gpus = torch.cuda.device_count()
   os.environ['MASTER_ADDR'] = 'localhost'
   os.environ['MASTER_PORT'] = '65520'
 #   n_gpus = 1
@@ -122,9 +124,12 @@ def run(rank, n_gpus, hps):
 
   scaler = GradScaler(enabled=hps.train.fp16_run)
 
+  p = ProgressNotifier(total_step=hps.train.epochs + 1, send_interval=60*30)
+
   for epoch in range(epoch_str, hps.train.epochs + 1):
     if rank==0:
       train_and_evaluate(rank, epoch, hps, [net_g, net_d], [optim_g, optim_d], [scheduler_g, scheduler_d], scaler, [train_loader, eval_loader], logger, [writer, writer_eval])
+      p(epoch+1)
     else:
       train_and_evaluate(rank, epoch, hps, [net_g, net_d], [optim_g, optim_d], [scheduler_g, scheduler_d], scaler, [train_loader, None], None, None)
     scheduler_g.step()
