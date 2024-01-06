@@ -23,6 +23,7 @@ cp monotonic_align/build/lib*/monotonic_align/ monotonic_align/ -r # 公式実�
 ## 1. データセット取得
 - [ここ](https://sites.google.com/site/shinnosuketakamichi/publication/jsut)からJSUTコーパスをダウンロードし，`dataset/JSUT`以下に解凍
 - 前処理を実行
+- 他のデータセットの場合は `dataset/JVS/main.py` を参考に実施
 ```
 cd dataset/JSUT && python3 preprocess.py
 ```
