@@ -6,6 +6,9 @@ input_dir = "jsut_ver1.1"
 output_dir = "wav"
 fs_target = 22050
 
+if not os.path.exists(os.path.join(input_dir, "README_en.txt")):
+    raise Exception("JSUTコーパスをダウンロードして解凍してください")
+
 os.makedirs(output_dir, exist_ok=True)
 for domain in tqdm(os.listdir(input_dir)):
     wav_in_dir = os.path.join(input_dir, domain, "wav")
