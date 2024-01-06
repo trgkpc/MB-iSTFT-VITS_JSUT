@@ -1,13 +1,17 @@
 # Cache files
 __pycache__
-build
 .vscode
 .DS_Store
 .idea
 *swp
 
+# build cache
+build/
+monotonic_align/core.c
+monotonic_align/monotonic_align/
+
 # wav
-dataset/*/wav
+dataset/*/wav/
 output
 
 # Security
