@@ -17,7 +17,7 @@ pip install -r requirements.txt
 - 以下を実行してください．
 - 2行目は公式実装にはなかったのですが，自分の手元ではこれをやらないと動きませんでした
 ```
-cd monotonic_align && python setup.py build_ext --inplace && cd -
+cd monotonic_align ; python setup.py build_ext --inplace ; cd -
 cp monotonic_align/build/lib*/monotonic_align/ monotonic_align/ -r # 公式実装には無いので不要かもしれない
 ```
 ## 1. データセット取得
@@ -25,7 +25,7 @@ cp monotonic_align/build/lib*/monotonic_align/ monotonic_align/ -r # 公式実�
 - 前処理を実行
 - 他のデータセットの場合は `dataset/JVS/main.py` を参考に実施
 ```
-cd dataset/JSUT && python3 preprocess.py
+cd dataset/JSUT ; python3 preprocess.py
 ```
 
 ## 2. 学習
