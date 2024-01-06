@@ -33,5 +33,6 @@ python3 train.py -c configs/jsut_js_istft_vits.json
 ```
 
 # メモ
-- `PIL` でエラーが出る場合，Pillowのバージョンが高すぎる可能性がある．`$ pip install Pillow==9.5.0`で解決するかもしれない．
+- 以下のエラーが出る場合，Pillowのバージョンが高すぎる可能性がある．`$ pip install Pillow==9.5.0`で解決するかもしれない．
+    - `AttributeError: module 'PIL.Image' has no attribute 'ANTIALIAS'`
 
