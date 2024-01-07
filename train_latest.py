@@ -36,13 +36,13 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 from text.symbols import symbols
 from text import accent_symbols
 
-# from SlackClient import ProgressNotifier
+from SlackModule import ProgressNotifier
 
 torch.autograd.set_detect_anomaly(True)
 torch.backends.cudnn.benchmark = True
 global_step = 0
 
-# prog_notify = ProgressNotifier(total_step=300*1000, send_interval=60*30)
+prog_notify = ProgressNotifier(total_step=300*1000, send_interval=60*30)
 
 def main():
   """Assume Single Node Multi GPUs Training Only"""
@@ -141,7 +141,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
     writer, writer_eval = writers
 
   train_loader.batch_sampler.set_epoch(epoch)
-  global global_step # , prog_notify
+  global global_step, prog_notify
 
   net_g.train()
   net_d.train()
@@ -250,7 +250,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
         utils.save_checkpoint(net_g, optim_g, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "G_{}.pth".format(global_step)))
         utils.save_checkpoint(net_d, optim_d, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "D_{}.pth".format(global_step)))
     global_step += 1
-    # prog_notify(global_step)
+    prog_notify(global_step)
 
   
   if rank == 0:
